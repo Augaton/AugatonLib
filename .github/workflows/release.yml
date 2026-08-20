@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Tag a publier"
+        description: "Tag a publier (doit exister)"
         required: true
 
 permissions:
@@ -15,10 +15,13 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      TAG: ${{ github.event.inputs.tag || github.ref_name }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: '8.0.x'
 
@@ -30,26 +33,32 @@ jobs:
           mkdir -p package/Plugins/dependencies
           cp out/AugatonLib.dll package/Plugins/dependencies/
           cp README.md package/
-          cd package && zip -r ../AugatonLib.zip .
+          (cd package && zip -qr ../AugatonLib.zip .)
+
+      - name: Rediger les notes
+        run: |
+          cat > notes.md <<'NOTES'
+          Bibliotheque partagee des plugins EXILED de la collection.
+
+          **Ce n'est pas un plugin.** Deposer `AugatonLib.dll` dans :
+
+          ```
+          .config/EXILED/Plugins/dependencies/
+          ```
+
+          Jamais dans `Plugins/7777/` : EXILED tenterait de la charger comme
+          plugin et echouerait.
+
+          Mettre a jour cette bibliotheque en meme temps que les plugins qui en
+          dependent : ils forment un lot indissociable.
+          NOTES
 
       - name: Publier
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
-          files: |
-            out/AugatonLib.dll
-            AugatonLib.zip
-          body: |
-            Bibliotheque partagee des plugins EXILED.
-
-            **Ce n'est pas un plugin.** Deposer `AugatonLib.dll` dans :
-
-            ```
-            .config/EXILED/Plugins/dependencies/
-            ```
-
-            Jamais dans `Plugins/7777/` : EXILED tenterait de la charger comme
-            plugin et echouerait.
-
-            Mettre a jour cette bibliotheque en meme temps que les plugins qui
-            en dependent : ils forment un lot indissociable.
+        run: |
+          FILES="AugatonLib.zip out/AugatonLib.dll"
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$TAG" $FILES --repo "$GITHUB_REPOSITORY" --clobber
+          else
+            gh release create "$TAG" $FILES --repo "$GITHUB_REPOSITORY" \
+              --title "AugatonLib $TAG" --notes-file notes.md
+          fi
