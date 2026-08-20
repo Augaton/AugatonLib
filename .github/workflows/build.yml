@@ -28,6 +28,50 @@ jobs:
           path: out/AugatonLib.dll
           if-no-files-found: error
 
+  tag:
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: write
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Lire la version du projet
+        id: version
+        run: |
+          VERSION=$(sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p' "src/AugatonLib.csproj" | head -1)
+          if [ -z "$VERSION" ]; then
+            echo "Aucune balise <Version> dans src/AugatonLib.csproj" >&2
+            exit 1
+          fi
+          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Creer le tag si la version est nouvelle
+        id: tagging
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          if git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null 2>&1; then
+            echo "::notice::$TAG existe deja, aucune release declenchee. Incrementez <Version> pour publier."
+            echo "created=false" >> "$GITHUB_OUTPUT"
+          else
+            git tag "$TAG"
+            git push origin "$TAG"
+            echo "::notice::Tag $TAG cree."
+            echo "created=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Declencher la release
+        if: steps.tagging.outputs.created == 'true'
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          gh workflow run release.yml --repo "$GITHUB_REPOSITORY" --ref "$TAG" -f tag="$TAG"
+
   secrets:
     runs-on: ubuntu-latest
     steps:

@@ -91,20 +91,27 @@ poussee ici est donc reprise par la prochaine release de chaque plugin.
 
 | Workflow | Declencheur | Produit |
 |---|---|---|
-| `build` | push sur `main`, pull request | Un artefact de run, visible dans l'onglet Actions |
-| `release` | push d'un **tag `v*`**, ou lancement manuel | Une **release** avec `AugatonLib.dll` |
+| `build` | push sur `main`, pull request | Compile, cree le tag si besoin, declenche la release |
+| `release` | tag `v*`, ou lancement manuel | Une **release** avec `AugatonLib.dll` |
 
-Un push sur `main` ne declenche que `build`. Pour obtenir une DLL telechargeable
-sans passer par l'onglet Actions :
+### Publication automatique
+
+Le job `tag` de `build` lit la balise `<Version>` du `.csproj`. Si le tag
+`v<version>` n'existe pas encore, il le cree et declenche `release`.
+
+Publier revient donc a **incrementer `<Version>` dans le `.csproj`** puis
+pousser sur `main`. Sans changement de version, aucun tag n'est cree et aucune
+release n'est publiee : les commits de correction ne generent pas de bruit.
+
+La version affichee par `status` en jeu est lue dans l'assembly, elle-meme
+issue de cette meme balise. Le tag, la DLL et l'affichage en jeu ne peuvent
+donc pas diverger.
+
+### Publication manuelle
 
 ```bash
-git tag v1.0.0
-git push origin v1.0.0
+git tag v1.0.0 && git push origin v1.0.0
 ```
 
-Ou depuis l'onglet Actions, workflow `release`, bouton **Run workflow** en
-saisissant le tag : il sera cree s'il n'existe pas.
-
-Comme les plugins compilent contre `main`, **une rupture d'API ici casse les
-douze CI a la fois**. Les changements incompatibles meritent un tag et un
-`augatonlib_ref` fixe cote plugins.
+Ou onglet Actions, workflow `release`, bouton **Run workflow** : le tag est cree
+s'il n'existe pas.

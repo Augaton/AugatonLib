@@ -1,4 +1,5 @@
 using System;
+using System.Reflection;
 using System.Text;
 using CommandSystem;
 using NorthwoodLib.Pools;
@@ -12,11 +13,11 @@ namespace AugatonLib.Commands
         private readonly string version;
         private readonly Func<StringBuilder, bool> detail;
 
-        public StatusCommand(string pluginName, string version, string permission, Func<StringBuilder, bool> detail = null)
+        public StatusCommand(string pluginName, Type pluginType, string permission, Func<StringBuilder, bool> detail = null)
         {
             this.pluginName = pluginName;
-            this.version = version;
             this.detail = detail;
+            version = ReadVersion(pluginType);
             Permission = permission;
         }
 
@@ -48,6 +49,18 @@ namespace AugatonLib.Commands
             {
                 StringBuilderPool.Shared.Return(builder);
             }
+        }
+
+        private static string ReadVersion(Type pluginType)
+        {
+            if (pluginType is null)
+                return "inconnue";
+
+            Version assemblyVersion = pluginType.Assembly.GetName().Version;
+
+            return assemblyVersion is null
+                ? "inconnue"
+                : $"{assemblyVersion.Major}.{assemblyVersion.Minor}.{assemblyVersion.Build}";
         }
     }
 }
