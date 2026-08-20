@@ -1,0 +1,12 @@
+<Project>
+
+  <PropertyGroup>
+    <RestorePackagesPath Condition=" '$(RestorePackagesPath)' == '' ">$(MSBuildThisFileDirectory)packages\</RestorePackagesPath>
+  </PropertyGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net48' Or '$(TargetFramework)' == 'net472' ">
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+    <PackageReference Include="Exiled.Dev.References" Version="1.0.4" GeneratePathProperty="true" ExcludeAssets="all" PrivateAssets="all" />
+  </ItemGroup>
+
+</Project>

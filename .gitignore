@@ -1,0 +1,9 @@
+bin/
+obj/
+packages/
+plugin_out_dll/
+*.dll
+*.pdb
+*.user
+*.suo
+.vs/

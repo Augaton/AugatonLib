@@ -1,0 +1,35 @@
+<Project>
+
+  <PropertyGroup>
+    <GameRefs>$(PkgExiled_Dev_References)\lib\net48</GameRefs>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(CommonProject)' == '' ">
+    <CommonProject>$(MSBuildThisFileDirectory)..\augatonlib\src\AugatonLib.csproj</CommonProject>
+    <CommonProject Condition="!Exists('$(CommonProject)')">$(MSBuildThisFileDirectory)..\AugatonLib\src\AugatonLib.csproj</CommonProject>
+    <CommonProject Condition="!Exists('$(CommonProject)')">$(MSBuildThisFileDirectory)augatonlib\src\AugatonLib.csproj</CommonProject>
+    <CommonProject Condition="!Exists('$(CommonProject)')">$(MSBuildThisFileDirectory)AugatonLib\src\AugatonLib.csproj</CommonProject>
+  </PropertyGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net48' Or '$(TargetFramework)' == 'net472' ">
+    <Reference Include="Assembly-CSharp-firstpass" HintPath="$(GameRefs)\Assembly-CSharp-firstpass.dll" Private="false" />
+    <Reference Include="Mirror" HintPath="$(GameRefs)\Mirror.dll" Private="false" />
+    <Reference Include="Pooling" HintPath="$(GameRefs)\Pooling.dll" Private="false" />
+    <Reference Include="UnityEngine" HintPath="$(GameRefs)\UnityEngine.dll" Private="false" />
+    <Reference Include="UnityEngine.CoreModule" HintPath="$(GameRefs)\UnityEngine.CoreModule.dll" Private="false" />
+    <Reference Include="UnityEngine.PhysicsModule" HintPath="$(GameRefs)\UnityEngine.PhysicsModule.dll" Private="false" />
+    <Reference Include="UnityEngine.AudioModule" HintPath="$(GameRefs)\UnityEngine.AudioModule.dll" Private="false" />
+    <Reference Include="UnityEngine.InputLegacyModule" HintPath="$(GameRefs)\UnityEngine.InputLegacyModule.dll" Private="false" />
+    <Reference Include="Unity.TextMeshPro" HintPath="$(GameRefs)\Unity.TextMeshPro.dll" Private="false" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(UseAugatonLib)' == 'true' And Exists('$(CommonProject)') ">
+    <ProjectReference Include="$(CommonProject)" Private="false" />
+  </ItemGroup>
+
+  <Target Name="WarnMissingAugatonLib" BeforeTargets="Build"
+          Condition=" '$(UseAugatonLib)' == 'true' And !Exists('$(CommonProject)') ">
+    <Error Text="AugatonLib introuvable. Clonez https://github.com/Augaton/AugatonLib a cote de ce depot, ou passez -p:CommonProject=/chemin/vers/AugatonLib/src/AugatonLib.csproj" />
+  </Target>
+
+</Project>
