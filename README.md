@@ -27,10 +27,30 @@ meme temps qu'eux.
 | `Caching.RoomCache` | Cache des salles eligibles, reconstruit au debut du round |
 | `Caching.CooldownTracker` | Cooldowns indexes sur `UserId` |
 | `Random.Chance` | Tirage pondere, melange Fisher-Yates, jets en pourcentage |
+| `Text.SafeText` | Assainissement de tout texte controle par un joueur avant affichage |
 | `Commands.StaffCommand` | Socle de commande staff : permission, bornage des arguments, capture d'exception, audit |
 | `Commands.StaffParentCommand` | Commande parente listant ses sous-commandes automatiquement |
 | `Commands.StatusCommand` | Sous-commande `status` uniforme |
 | `Integrations.UncomplicatedBridge` | Pont vers UncomplicatedCustomItems, CustomRoles et CustomTeams |
+
+## Assainissement des textes joueur
+
+Un pseudo SCP:SL peut contenir des balises rich text. Diffuse tel quel dans un
+broadcast ou un hint, il permet a n'importe quel joueur d'imposer une taille de
+police, une couleur ou un `<link>` malforme a tous les autres — spam visuel au
+mieux, crash client au pire.
+
+`SafeText.Sanitize` retire les chevrons, les caracteres de controle, les
+caracteres de formatage et les zero-width, borne la longueur, et renvoie un
+repli si rien ne subsiste. Les emoji sont preserves.
+
+```csharp
+Announce(Text.Winner.Replace("%PLAYER%", SafeText.Nickname(player)));
+```
+
+**Regle** : tout texte venant d'un joueur et affiche a un autre joueur passe par
+`SafeText`. Les logs serveur et les reponses de console staff gardent la valeur
+brute, qui est ce que le staff a besoin de voir.
 
 ## Le pont Uncomplicated
 
