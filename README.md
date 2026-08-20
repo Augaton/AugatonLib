@@ -87,10 +87,23 @@ poussee ici est donc reprise par la prochaine release de chaque plugin.
 
 ## Integration continue
 
-| Workflow | Declencheur | Role |
+`build` et `release` sont deux **workflows distincts**.
+
+| Workflow | Declencheur | Produit |
 |---|---|---|
-| `build` | push sur `main`, pull request | Compile, verifie la sortie, gitleaks, format |
-| `release` | tag `v*` | Compile et publie la DLL |
+| `build` | push sur `main`, pull request | Un artefact de run, visible dans l'onglet Actions |
+| `release` | push d'un **tag `v*`**, ou lancement manuel | Une **release** avec `AugatonLib.dll` |
+
+Un push sur `main` ne declenche que `build`. Pour obtenir une DLL telechargeable
+sans passer par l'onglet Actions :
+
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+Ou depuis l'onglet Actions, workflow `release`, bouton **Run workflow** en
+saisissant le tag : il sera cree s'il n'existe pas.
 
 Comme les plugins compilent contre `main`, **une rupture d'API ici casse les
 douze CI a la fois**. Les changements incompatibles meritent un tag et un
