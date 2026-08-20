@@ -75,3 +75,23 @@ dotnet build -c Release -p:CommonProject=/chemin/AugatonLib/src/AugatonLib.cspro
 
 Sans cela, le build s'arrete avec un message explicite plutot qu'une erreur de
 reference obscure.
+
+## Releases
+
+Chaque tag `v*` publie `AugatonLib.dll` ainsi qu'une archive prete a extraire
+dans `.config/EXILED/`.
+
+Les workflows des douze plugins recuperent ce depot par `actions/checkout` sur
+`main` et embarquent la DLL compilee dans leur propre release. Une modification
+poussee ici est donc reprise par la prochaine release de chaque plugin.
+
+## Integration continue
+
+| Workflow | Declencheur | Role |
+|---|---|---|
+| `build` | push sur `main`, pull request | Compile, verifie la sortie, gitleaks, format |
+| `release` | tag `v*` | Compile et publie la DLL |
+
+Comme les plugins compilent contre `main`, **une rupture d'API ici casse les
+douze CI a la fois**. Les changements incompatibles meritent un tag et un
+`augatonlib_ref` fixe cote plugins.

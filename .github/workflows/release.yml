@@ -1,0 +1,55 @@
+name: release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag a publier"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Compiler
+        run: dotnet build src/AugatonLib.csproj -c Release -o out
+
+      - name: Preparer l'archive
+        run: |
+          mkdir -p package/Plugins/dependencies
+          cp out/AugatonLib.dll package/Plugins/dependencies/
+          cp README.md package/
+          cd package && zip -r ../AugatonLib.zip .
+
+      - name: Publier
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
+          files: |
+            out/AugatonLib.dll
+            AugatonLib.zip
+          body: |
+            Bibliotheque partagee des plugins EXILED.
+
+            **Ce n'est pas un plugin.** Deposer `AugatonLib.dll` dans :
+
+            ```
+            .config/EXILED/Plugins/dependencies/
+            ```
+
+            Jamais dans `Plugins/7777/` : EXILED tenterait de la charger comme
+            plugin et echouerait.
+
+            Mettre a jour cette bibliotheque en meme temps que les plugins qui
+            en dependent : ils forment un lot indissociable.

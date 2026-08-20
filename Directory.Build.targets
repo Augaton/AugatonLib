@@ -27,7 +27,7 @@
     <ProjectReference Include="$(CommonProject)" Private="false" />
   </ItemGroup>
 
-  <Target Name="WarnMissingAugatonLib" BeforeTargets="Build"
+  <Target Name="WarnMissingAugatonLib" BeforeTargets="PrepareForBuild;CollectPackageReferences;CoreCompile"
           Condition=" '$(UseAugatonLib)' == 'true' And !Exists('$(CommonProject)') ">
     <Error Text="AugatonLib introuvable. Clonez https://github.com/Augaton/AugatonLib a cote de ce depot, ou passez -p:CommonProject=/chemin/vers/AugatonLib/src/AugatonLib.csproj" />
   </Target>
