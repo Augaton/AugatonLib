@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using Exiled.API.Features;
 using MEC;
@@ -8,8 +9,14 @@ namespace AugatonLib.Hints
 {
     public sealed class HintChannel
     {
+        private const string ReferencedAssembly = "HintServiceMeow-Exiled";
+        private const string ShippedAssembly = "HintServiceMeow";
+
         private static bool serviceAvailable = true;
         private static bool warned;
+        private static bool bindingHooked;
+
+        static HintChannel() => HookAssemblyBinding();
 
         private readonly Dictionary<string, object> activeHints = new Dictionary<string, object>();
         private readonly Dictionary<string, CoroutineHandle> timers = new Dictionary<string, CoroutineHandle>();
@@ -145,6 +152,54 @@ namespace AugatonLib.Hints
                 return;
 
             HintServiceMeow.Core.Utilities.PlayerDisplay.Get(player).RemoveHint(hint);
+        }
+
+        private static void HookAssemblyBinding()
+        {
+            if (bindingHooked)
+                return;
+
+            bindingHooked = true;
+
+            try
+            {
+                AppDomain.CurrentDomain.AssemblyResolve += ResolveHintService;
+            }
+            catch (Exception e)
+            {
+                Log.Debug($"HintChannel: liaison HintServiceMeow non installee ({e.Message}).");
+            }
+        }
+
+        private static Assembly ResolveHintService(object sender, ResolveEventArgs args)
+        {
+            try
+            {
+                string requested = new AssemblyName(args.Name).Name;
+
+                if (!requested.Equals(ReferencedAssembly, StringComparison.OrdinalIgnoreCase)
+                    && !requested.Equals(ShippedAssembly, StringComparison.OrdinalIgnoreCase))
+                {
+                    return null;
+                }
+
+                foreach (Assembly loaded in AppDomain.CurrentDomain.GetAssemblies())
+                {
+                    string name = loaded.GetName().Name;
+
+                    if (name.Equals(ShippedAssembly, StringComparison.OrdinalIgnoreCase)
+                        || name.Equals(ReferencedAssembly, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return loaded;
+                    }
+                }
+
+                return null;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
         }
 
         private void KillTimer(string userId)
