@@ -61,6 +61,15 @@ namespace AugatonLib.Integrations
 
         public void Refresh()
         {
+            if (!RolesAvailable)
+                ResolveRoles();
+
+            if (!ItemsAvailable)
+                ResolveItems();
+
+            if (!TeamsAvailable)
+                ResolveTeams();
+
             Fill(roles, roleList, "Id", "Name");
             Fill(items, itemList, "Id", "Name");
             Fill(teams, teamList, "Id", "Name");

@@ -139,7 +139,7 @@ namespace AugatonLib.Runtime
 
             foreach (Integration integration in IntegrationProbe.All)
             {
-                Version version = IntegrationProbe.VersionOf(integration.AssemblyName);
+                Version version = IntegrationProbe.VersionOf(integration);
 
                 if (version is not null)
                 {
@@ -203,7 +203,7 @@ namespace AugatonLib.Runtime
                 }
             }
 
-            if (!IntegrationProbe.IsLoaded("HintServiceMeow") && HasCapability(Capability.Hints))
+            if (!IntegrationProbe.IsPresent("HintServiceMeow") && HasCapability(Capability.Hints))
                 warnings.Add("HintServiceMeow absent : les hints se remplaceront mutuellement.");
 
             if (warnings.Count == 0)
@@ -218,7 +218,7 @@ namespace AugatonLib.Runtime
 
         private static string HintStatus()
         {
-            if (!IntegrationProbe.IsLoaded("HintServiceMeow"))
+            if (!IntegrationProbe.IsPresent("HintServiceMeow"))
                 return "natifs (HintServiceMeow absent)";
 
             return HintChannel.ServiceAvailable ? "HintServiceMeow" : "natifs (repli apres echec)";

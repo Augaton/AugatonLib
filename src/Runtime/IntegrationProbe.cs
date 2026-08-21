@@ -6,15 +6,15 @@ namespace AugatonLib.Runtime
 {
     public sealed class Integration
     {
-        public Integration(string assemblyName, string displayName, string role, bool required)
+        public Integration(string[] assemblyNames, string displayName, string role, bool required)
         {
-            AssemblyName = assemblyName;
+            AssemblyNames = assemblyNames;
             DisplayName = displayName;
             Role = role;
             Required = required;
         }
 
-        public string AssemblyName { get; }
+        public string[] AssemblyNames { get; }
 
         public string DisplayName { get; }
 
@@ -27,12 +27,36 @@ namespace AugatonLib.Runtime
     {
         private static readonly Integration[] Catalog =
         {
-            new Integration("HintServiceMeow", "HintServiceMeow", "hints coordonnes", true),
-            new Integration("Exiled.CustomItems", "Exiled.CustomItems", "objets personnalises", false),
-            new Integration("Exiled.CustomRoles", "Exiled.CustomRoles", "roles personnalises", false),
-            new Integration("UncomplicatedCustomItems", "UncomplicatedCustomItems", "objets UC", false),
-            new Integration("UncomplicatedCustomRoles", "UncomplicatedCustomRoles", "roles UC", false),
-            new Integration("UncomplicatedCustomTeams", "UncomplicatedCustomTeams", "equipes UC", false),
+            new Integration(
+                new[] { "HintServiceMeow-Exiled", "HintServiceMeow" },
+                "HintServiceMeow",
+                "hints coordonnes",
+                true),
+            new Integration(
+                new[] { "Exiled.CustomItems" },
+                "Exiled.CustomItems",
+                "objets personnalises",
+                false),
+            new Integration(
+                new[] { "Exiled.CustomRoles" },
+                "Exiled.CustomRoles",
+                "roles personnalises",
+                false),
+            new Integration(
+                new[] { "UncomplicatedCustomItems-Exiled", "UncomplicatedCustomItems" },
+                "UncomplicatedCustomItems",
+                "objets UC",
+                false),
+            new Integration(
+                new[] { "UncomplicatedCustomRoles" },
+                "UncomplicatedCustomRoles",
+                "roles UC",
+                false),
+            new Integration(
+                new[] { "UncomplicatedCustomTeams" },
+                "UncomplicatedCustomTeams",
+                "equipes UC",
+                false),
         };
 
         public static IReadOnlyList<Integration> All => Catalog;
@@ -48,14 +72,68 @@ namespace AugatonLib.Runtime
             {
                 AssemblyName name = SafeName(assembly);
 
-                if (name is null)
+                if (name is null || !name.Name.Equals(assemblyName, StringComparison.OrdinalIgnoreCase))
                     continue;
 
-                if (name.Name.Equals(assemblyName, StringComparison.OrdinalIgnoreCase))
-                    return name.Version;
+                return Declared(assembly) ?? name.Version;
             }
 
             return null;
+        }
+
+        public static Version VersionOf(Integration integration)
+        {
+            if (integration is null)
+                return null;
+
+            foreach (string candidate in integration.AssemblyNames)
+            {
+                Version found = VersionOf(candidate);
+
+                if (found is not null)
+                    return found;
+            }
+
+            return null;
+        }
+
+        public static bool IsLoaded(Integration integration) => VersionOf(integration) is not null;
+
+        public static Integration Find(string displayName)
+        {
+            foreach (Integration integration in Catalog)
+            {
+                if (integration.DisplayName.Equals(displayName, StringComparison.OrdinalIgnoreCase))
+                    return integration;
+            }
+
+            return null;
+        }
+
+        public static bool IsPresent(string displayName) => IsLoaded(Find(displayName));
+
+        private static Version Declared(Assembly assembly)
+        {
+            try
+            {
+                string raw = assembly
+                    .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
+                    .InformationalVersion;
+
+                if (string.IsNullOrEmpty(raw))
+                    return null;
+
+                int cut = raw.IndexOfAny(new[] { '-', '+', ' ' });
+
+                if (cut > 0)
+                    raw = raw.Substring(0, cut);
+
+                return Version.TryParse(raw, out Version parsed) ? parsed : null;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
         }
 
         private static AssemblyName SafeName(Assembly assembly)

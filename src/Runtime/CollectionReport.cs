@@ -66,7 +66,7 @@ namespace AugatonLib.Runtime
 
             foreach (Integration integration in IntegrationProbe.All)
             {
-                Version version = IntegrationProbe.VersionOf(integration.AssemblyName);
+                Version version = IntegrationProbe.VersionOf(integration);
 
                 builder.AppendLine(version is null
                     ? $"  [-] {integration.DisplayName} - absent"
