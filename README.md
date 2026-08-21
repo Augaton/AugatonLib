@@ -84,7 +84,7 @@ cote du depot du plugin :
 ```
 mon-dossier/
 ├── augatonlib/      (ou AugatonLib/, les deux sont reconnus)
-└── Better914/
+└── SCP500s/
 ```
 
 Ou passez le chemin explicitement :
