@@ -28,7 +28,7 @@ namespace AugatonLib.Runtime
         private static readonly Integration[] Catalog =
         {
             new Integration(
-                new[] { "HintServiceMeow-Exiled", "HintServiceMeow" },
+                new[] { "HintServiceMeow", "HintServiceMeow-Exiled" },
                 "HintServiceMeow",
                 "hints coordonnes",
                 true),
