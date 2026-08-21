@@ -23,7 +23,6 @@ namespace AugatonLib.Bus
         }
 
         private static readonly List<Subscription> Subscriptions = new List<Subscription>(16);
-        private static readonly List<Subscription> Buffer = new List<Subscription>(8);
 
         public static int SubscriptionCount => Subscriptions.Count;
 
@@ -58,21 +57,24 @@ namespace AugatonLib.Bus
             if (string.IsNullOrEmpty(topic) || Subscriptions.Count == 0)
                 return 0;
 
-            Buffer.Clear();
+            List<Subscription> targets = null;
 
             foreach (Subscription subscription in Subscriptions)
             {
-                if (string.Equals(subscription.Topic, topic, StringComparison.OrdinalIgnoreCase))
-                    Buffer.Add(subscription);
+                if (!string.Equals(subscription.Topic, topic, StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                targets ??= new List<Subscription>(4);
+                targets.Add(subscription);
             }
 
-            if (Buffer.Count == 0)
+            if (targets is null)
                 return 0;
 
             BusMessage message = new BusMessage(topic, source, payload);
             int delivered = 0;
 
-            foreach (Subscription subscription in Buffer)
+            foreach (Subscription subscription in targets)
             {
                 try
                 {
@@ -85,15 +87,10 @@ namespace AugatonLib.Bus
                 }
             }
 
-            Buffer.Clear();
             return delivered;
         }
 
-        public static void Clear()
-        {
-            Subscriptions.Clear();
-            Buffer.Clear();
-        }
+        public static void Clear() => Subscriptions.Clear();
 
         public static string Describe()
         {
