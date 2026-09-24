@@ -45,6 +45,16 @@ namespace AugatonLib.Arbitration
             ZoneType.LightContainment,
         };
 
+        private static readonly ZoneType[] SingleZones =
+        {
+            ZoneType.LightContainment,
+            ZoneType.HeavyContainment,
+            ZoneType.Entrance,
+            ZoneType.Surface,
+            ZoneType.Pocket,
+            ZoneType.Other,
+        };
+
         private static readonly List<BlackoutClaim> Blackouts = new List<BlackoutClaim>(4);
         private static readonly List<TintClaim> Tints = new List<TintClaim>(4);
 
@@ -61,17 +71,23 @@ namespace AugatonLib.Arbitration
 
         public static void Blackout(string owner, float duration, ZoneType[] zones = null)
         {
-            if (string.IsNullOrEmpty(owner) || duration <= 0f)
+            if (string.IsNullOrEmpty(owner) || float.IsNaN(duration) || duration <= 0f)
+                return;
+
+            ZoneType[] target = Normalize(zones);
+
+            if (target.Length == 0)
                 return;
 
             Purge();
 
-            ZoneType[] target = zones is null || zones.Length == 0 ? AllZones : zones;
+            float now = Time.realtimeSinceStartup;
 
             Blackouts.RemoveAll(claim => string.Equals(claim.Owner, owner, StringComparison.Ordinal));
-            Blackouts.Add(new BlackoutClaim(owner, target, Time.realtimeSinceStartup + duration));
+            Blackouts.Add(new BlackoutClaim(owner, target, now + duration));
 
-            Map.TurnOffAllLights(duration, target);
+            foreach (ZoneType zone in target)
+                Map.TurnOffAllLights(LatestExpiry(zone) - now, zone);
         }
 
         public static void Restore(string owner)
@@ -97,18 +113,17 @@ namespace AugatonLib.Arbitration
 
             Blackouts.RemoveAll(claim => string.Equals(claim.Owner, owner, StringComparison.Ordinal));
 
-            List<ZoneType> free = new List<ZoneType>(released.Length);
+            float now = Time.realtimeSinceStartup;
 
             foreach (ZoneType zone in released)
             {
-                if (IsClaimed(zone))
-                    continue;
+                float remaining = LatestExpiry(zone) - now;
 
-                free.Add(zone);
+                if (remaining > 0f)
+                    Map.TurnOffAllLights(remaining, zone);
+                else
+                    Map.TurnOnAllLights(new[] { zone });
             }
-
-            if (free.Count > 0)
-                Map.TurnOnAllLights(free);
         }
 
         public static bool IsBlackedOut(ZoneType zone)
@@ -162,6 +177,12 @@ namespace AugatonLib.Arbitration
             }
         }
 
+        internal static void Forget()
+        {
+            Blackouts.Clear();
+            Tints.Clear();
+        }
+
         public static string Describe()
         {
             Purge();
@@ -187,6 +208,50 @@ namespace AugatonLib.Arbitration
             }
 
             return false;
+        }
+
+        private static float LatestExpiry(ZoneType zone)
+        {
+            float latest = 0f;
+
+            foreach (BlackoutClaim claim in Blackouts)
+            {
+                if (claim.Expiry <= latest)
+                    continue;
+
+                foreach (ZoneType claimed in claim.Zones)
+                {
+                    if (claimed != zone)
+                        continue;
+
+                    latest = claim.Expiry;
+                    break;
+                }
+            }
+
+            return latest;
+        }
+
+        private static ZoneType[] Normalize(ZoneType[] zones)
+        {
+            if (zones is null || zones.Length == 0)
+                return AllZones;
+
+            List<ZoneType> result = new List<ZoneType>(SingleZones.Length);
+
+            foreach (ZoneType zone in zones)
+            {
+                if (zone == ZoneType.Unspecified)
+                    return AllZones;
+
+                foreach (ZoneType single in SingleZones)
+                {
+                    if ((zone & single) != 0 && !result.Contains(single))
+                        result.Add(single);
+                }
+            }
+
+            return result.ToArray();
         }
 
         private static void Purge()

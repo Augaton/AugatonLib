@@ -57,6 +57,17 @@ namespace AugatonLib.Arbitration
             Apply(player, state);
         }
 
+        public static void SetBaseline(Player player, Vector3 baseline)
+        {
+            if (!TryKey(player, out string userId))
+                return;
+
+            State state = Ensure(userId);
+            state.Baseline = Sanitize(baseline);
+
+            Apply(player, state);
+        }
+
         public static Vector3 BaselineOf(Player player)
         {
             return TryKey(player, out string userId) && States.TryGetValue(userId, out State state)
@@ -120,6 +131,8 @@ namespace AugatonLib.Arbitration
 
             States.Clear();
         }
+
+        internal static void ForgetAll() => States.Clear();
 
         public static string Describe()
         {

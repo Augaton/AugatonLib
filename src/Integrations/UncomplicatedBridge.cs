@@ -236,18 +236,25 @@ namespace AugatonLib.Integrations
         {
             target.Clear();
 
-            if (listProperty?.GetValue(null) is not IEnumerable enumerable)
-                return;
-
-            foreach (object candidate in enumerable)
+            try
             {
-                if (candidate is null)
-                    continue;
+                if (listProperty?.GetValue(null) is not IEnumerable enumerable)
+                    return;
 
-                uint id = ReadId(candidate);
-                object name = candidate.GetType().GetProperty(nameName)?.GetValue(candidate);
+                foreach (object candidate in enumerable)
+                {
+                    if (candidate is null)
+                        continue;
 
-                target.Add(new UncomplicatedEntry(id, name as string ?? $"#{id}"));
+                    uint id = ReadId(candidate);
+                    object name = candidate.GetType().GetProperty(nameName)?.GetValue(candidate);
+
+                    target.Add(new UncomplicatedEntry(id, name as string ?? $"#{id}"));
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Warn($"[AugatonLib] Lecture de {listProperty?.DeclaringType?.FullName} impossible : {Unwrap(e)}");
             }
         }
 

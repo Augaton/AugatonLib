@@ -19,8 +19,10 @@ namespace AugatonLib.FriendlyFire
             if (string.IsNullOrEmpty(owner))
                 return;
 
-            Holders(OnKey).Remove(owner);
-            Holders(OffKey).Remove(owner);
+            bool removed = Holders(OnKey).Remove(owner) | Holders(OffKey).Remove(owner);
+
+            if (!removed)
+                return;
 
             Resolve();
         }

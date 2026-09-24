@@ -32,7 +32,37 @@ namespace AugatonLib.Caching
             if (rooms.Count == 0)
                 Rebuild();
 
-            return rooms.Count == 0 ? null : rooms[UnityEngine.Random.Range(0, rooms.Count)];
+            if (rooms.Count == 0)
+                return null;
+
+            if (!Map.IsLczDecontaminated)
+                return rooms[UnityEngine.Random.Range(0, rooms.Count)];
+
+            int safe = 0;
+
+            foreach (Room room in rooms)
+            {
+                if (room.Zone != ZoneType.LightContainment)
+                    safe++;
+            }
+
+            if (safe == 0)
+                return null;
+
+            int target = UnityEngine.Random.Range(0, safe);
+
+            foreach (Room room in rooms)
+            {
+                if (room.Zone == ZoneType.LightContainment)
+                    continue;
+
+                if (target == 0)
+                    return room;
+
+                target--;
+            }
+
+            return null;
         }
 
         private static bool IsExcluded(RoomType type)

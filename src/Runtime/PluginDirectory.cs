@@ -34,6 +34,7 @@ namespace AugatonLib.Runtime
 
             Entries[assemblyName] = new PluginRecord(plugin.Name, assemblyName, plugin.Version, capabilities);
 
+            RoundReset.Hook();
             ScheduleBanner();
         }
 
